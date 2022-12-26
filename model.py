@@ -63,7 +63,7 @@ class TripletLoss(nn.Module):
         negative = similar_img[:, :5] # shape (batch_size, 5)
         cost = 0 
         for i, pos in enumerate(positive):
-            cost += np.max(sum(scores[negative[i]]) - sum(scores[pos]), 0)
+            cost += sum(scores[negative[i]]) - sum(scores[pos])
         return cost.sum()/positive.shape[0]
 
 class ReIdModel(nn.Module):
@@ -148,7 +148,7 @@ class ReIdModel(nn.Module):
         """Compute the triplet loss given image embeddings
         """
         loss = self.criterion(img_emb, ids)
-        self.logger.update('Le', loss.data[0], img_emb.size(0))
+        self.logger.update('Le', loss.item(), img_emb.size(0))
         self.loss_t = loss
         return loss
     
@@ -157,6 +157,7 @@ class ReIdModel(nn.Module):
         """
         self.Eiters += 1
         self.logger.update('lr', self.optimizer.param_groups[0]['lr'])
+        self.logger.update('Eit', self.Eiters)
 
         # compute the embeddings
         img_emb= self.forward(images)
