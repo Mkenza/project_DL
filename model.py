@@ -1,9 +1,11 @@
+from collections import OrderedDict
 from scipy import spatial
 import torch 
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision import models
 
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 
 def l2norm(X):
@@ -12,6 +14,32 @@ def l2norm(X):
     norm = torch.pow(X, 2).sum(dim=1, keepdim=True).sqrt()
     X = torch.div(X, norm)
     return X
+class LogCollector(object):
+    """A collection of logging objects that can change from train to val"""
+
+    def __init__(self):
+        # to keep the order of logged variables deterministic
+        self.meters = OrderedDict()
+
+    def update(self, k, v, n=0):
+        # create a new meter if previously not recorded
+        self.meters[k].update(v, n)
+
+    def __str__(self):
+        """Concatenate the meters in one log line
+        """
+        s = ''
+        for i, (k, v) in enumerate(self.meters.iteritems()):
+            if i > 0:
+                s += '  '
+            s += k + ' ' + str(v)
+        return s
+
+    def tb_log(self, tb_logger, prefix='', step=None):
+        """Log using tensorboard
+        """
+        for k, v in self.meters.iteritems():
+            tb_logger.log_value(prefix + k, v.val, step=step)
   
 class TripletLoss(nn.Module):
     """
@@ -35,7 +63,7 @@ class TripletLoss(nn.Module):
         negative = similar_img[:, :5] # shape (batch_size, 5)
         cost = 0 
         for i, pos in enumerate(positive):
-            cost += sum(scores[negative[i]]) - sum(scores[pos])
+            cost += np.max(sum(scores[negative[i]]) - sum(scores[pos]), 0)
         return cost.sum()/positive.shape[0]
 
 class ReIdModel(nn.Module):
@@ -48,7 +76,7 @@ class ReIdModel(nn.Module):
         # Load a pre-trained model
         self.cnn = self.get_cnn(opt.cnn_type, True)
 
-
+        
         # Replace the last fully connected layer of CNN with a new one
         if opt.cnn_type.startswith('vgg'):
             self.fc = nn.Linear(self.cnn.classifier._modules['6'].in_features,
@@ -63,12 +91,15 @@ class ReIdModel(nn.Module):
         self.init_weights()
         self.criterion = TripletLoss(margin=opt.margin)
         params = list(self.fc.parameters())
+        params += list(self.fc2.parameters())
         params += list(self.cnn.parameters())
         self.params = params
-
+        self.Eiters = 0
         self.optimizer = torch.optim.Adam(params, lr=opt.learning_rate)
         if torch.cuda.is_available():
           self.cuda()
+    def set_logger(self, logger):
+        self.logger = logger
     def get_cnn(self, arch, pretrained):
         model = models.__dict__[arch]()
         model.features = nn.DataParallel(model.features)
@@ -117,15 +148,15 @@ class ReIdModel(nn.Module):
         """Compute the triplet loss given image embeddings
         """
         loss = self.criterion(img_emb, ids)
-        # self.logger.update('Le', loss.data[0], img_emb.size(0))
+        self.logger.update('Le', loss.data[0], img_emb.size(0))
         self.loss_t = loss
         return loss
     
     def train_emb(self, images, indexes, ids, *args):
         """One training step.
         """
-        # self.logger.update('Eit', self.Eiters)
-        # self.logger.update('lr', self.optimizer.param_groups[0]['lr'])
+        self.Eiters += 1
+        self.logger.update('lr', self.optimizer.param_groups[0]['lr'])
 
         # compute the embeddings
         img_emb= self.forward(images)
