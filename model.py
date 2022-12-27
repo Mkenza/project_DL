@@ -54,17 +54,30 @@ class TripletLoss(nn.Module):
     def forward(self, im, ids):
         # exemples positifs
         positive = np.array([np.where(np.array(ids)==id) for id in np.array(ids)]) # shape (batch_size, vary)
+        
+        # exemples negatifs
+        negative = np.array([np.where(np.array(ids)!=id) for id in np.array(ids)]) # shape (batch_size, vary)
+        
         # matrice de similarites entre les images encodees
         scores = im.mm(im.t()) # shape (batch_size, batch_size)
         
-        similar_img = torch.argsort(scores, dim=1, descending=True) # shape (batch_size, batch_size)
-        
-        # exemples négatifs
-        negative = similar_img[:, :5] # shape (batch_size, 5)
-        cost = 0 
-        for i, pos in enumerate(positive):
-            cost += sum(scores[negative[i]]) - sum(scores[pos])
-        return cost.sum()/positive.shape[0]
+        cost = self.margin
+
+        for j, pos in enumerate(positive):
+          # get negatives for j-th anchor
+          neg = negative[j]
+
+          # get hardest negatives in the batch
+          hard_negatives = torch.sort(scores[j][neg], descending=True)
+
+          # add minimum to loss as much hard negatives as positives
+          cost -= torch.min(hard_negatives[:pos.shape[0]][0])
+
+          scores[j][j] = 0 # remove digonale
+
+          # add maximum distance to positives to loss
+          cost += torch.max(scores[j][pos])
+        return cost
 
 class ReIdModel(nn.Module):
 
@@ -142,6 +155,7 @@ class ReIdModel(nn.Module):
 
         features = self.fc(features)
         features = self.fc2(F.relu(features))
+        features = l2norm(features)
         return features
 
     def forward_loss(self, img_emb, ids, **kwargs):
