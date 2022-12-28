@@ -71,12 +71,12 @@ class TripletLoss(nn.Module):
           hard_negatives = torch.sort(scores[j][neg], descending=True)
 
           # add minimum to loss as much hard negatives as positives
-          cost -= torch.min(hard_negatives[:pos.shape[0]][0])
+          cost += hard_negatives[0][0]
 
           scores[j][j] = 0 # remove digonale
 
           # add maximum distance to positives to loss
-          cost += torch.max(scores[j][pos])
+          cost -= torch.min(scores[j][pos])
         return cost
 
 class ReIdModel(nn.Module):
