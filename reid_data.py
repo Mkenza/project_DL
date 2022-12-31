@@ -2,11 +2,13 @@ import os
 import sys
 from pathlib import Path
 from typing import Any, Callable, Optional
+from pandas.core.frame import is_dataclass
 import torch
 import numpy as np
 from PIL import Image
 from torchvision.datasets.vision import VisionDataset
 import torchvision.transforms as transforms
+from itertools import chain
 
 class ReIdDataset(VisionDataset):
     """A PyTorch vision dataset compatible avec les modèles vision
@@ -31,8 +33,39 @@ class ReIdDataset(VisionDataset):
 
         if self.transform is not None:
             image = self.transform(image)
+        ids = [id]
+
+        # we add positive examples only to training batches
+        if "test" in self.image_folder:
+          images_p = image.unsqueeze(dim=0)
+
+          indexes = [index]
+        else:
+          images = []
+
+          # get indexes of positive examples
+          positive = np.where(np.array(self.ids)==id)
+
+          # choose randomly 2 other examples
+          indexes_pos = np.random.choice(positive[0], size=2)
+          for idx in indexes_pos:
+                # get positive image
+                image_pos, _ = self.get_raw_item(idx)
+
+                # transform it if required
+                if self.transform is not None:
+                    image_pos = self.transform(image_pos)
+                # add it to the list of images
+                images.append(image_pos)
+                ids.append(id)
         
-        return image, index, id
+          # keep the same order for indexes and images
+          images.append(image)
+          indexes = np.append(indexes_pos, index)
+
+          # stack them to get a tensor of (3, 3, 148, 64)
+          images_p = torch.stack(images, 0)
+        return images_p, indexes, ids
 
     def get_raw_item(self, index):
         id = self.ids[index]
@@ -47,19 +80,22 @@ class ReIdDataset(VisionDataset):
 def collate_fn(data):
     """Build mini-batch tensors from a list of (image, index, id) tuples.
     Args:
-        data: list of (image, index, id) tuple.
-            - image: torch tensor of shape (3, 128, 64).
+        data: list of (images, indexes, ids) tuple.
+            - images: torch tensor of shape (3, 3, 128, 64).
     Returns:
-        images: torch tensor of shape (batch_size, 3, 128, 64).
+        images: torch tensor of shape (batch_size*3, 3, 128, 64).
         ids: list of ids of the images of the batch
     """
     # Sort a data list by caption length
     
     images, indexes, ids = zip(*data)
     
-    # Merge images (convert tuple of 3D tensor to 4D tensor)
-    images = torch.stack(images, 0)
-    return images, indexes, ids
+    # Merge mini-batches of images 
+    images = torch.stack(images, 0) #dim = (batch_size, 3, 3, 128, 64)
+    images_p = images.flatten(start_dim=0, end_dim=1) #dim = (batch_size * 3, 3, 128, 64)
+    ids_flatten = tuple(chain.from_iterable(ids))
+    indexes_flattened = tuple(chain.from_iterable(indexes))
+    return images_p, indexes_flattened , ids_flatten
 
 def get_loader(image_folder, transform=transforms.ToTensor(),
                       batch_size=100, shuffle=True,

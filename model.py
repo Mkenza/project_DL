@@ -61,22 +61,17 @@ class TripletLoss(nn.Module):
         # matrice de similarites entre les images encodees
         scores = im.mm(im.t()) # shape (batch_size, batch_size)
         
-        cost = self.margin
+        cost = 0
 
         for j, pos in enumerate(positive):
           # get negatives for j-th anchor
           neg = negative[j]
+        
+          scores[j][j] = 0
+          scores_anchor = scores[j]
 
-          # get hardest negatives in the batch
-          hard_negatives = torch.sort(scores[j][neg], descending=True)
-
-          # add minimum to loss as much hard negatives as positives
-          cost += hard_negatives[0][0]
-
-          scores[j][j] = 0 # remove digonale
-
-          # add maximum distance to positives to loss
-          cost -= torch.min(scores[j][pos])
+          # compare maximum of similarity with negatives, with minimum similarity to positives to loss
+          cost += max(self.margin + torch.max(scores_anchor[neg])-torch.min(scores_anchor[pos]), 0)
         return cost
 
 class ReIdModel(nn.Module):
