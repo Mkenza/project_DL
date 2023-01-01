@@ -2,7 +2,8 @@ from collections import OrderedDict
 
 
 class AverageMeter(object):
-    """Computes and stores the average and current value"""
+    """Computes and stores the average and current value
+    code from VSEpp"""
 
     def __init__(self):
         self.reset()
@@ -29,7 +30,8 @@ class AverageMeter(object):
         return '%.4f (%.4f)' % (self.val, self.avg)
     
 class LogCollector(object):
-    """A collection of logging objects that can change from train to val"""
+    """A collection of logging objects that can change from train to val
+    code from VSEpp"""
 
     def __init__(self):
         # to keep the order of logged variables deterministic

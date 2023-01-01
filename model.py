@@ -1,7 +1,5 @@
 from collections import OrderedDict
-from scipy import spatial
 import torch 
-from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision import models
 
 import torch.nn as nn
@@ -14,37 +12,11 @@ def l2norm(X):
     norm = torch.pow(X, 2).sum(dim=1, keepdim=True).sqrt()
     X = torch.div(X, norm)
     return X
-class LogCollector(object):
-    """A collection of logging objects that can change from train to val"""
-
-    def __init__(self):
-        # to keep the order of logged variables deterministic
-        self.meters = OrderedDict()
-
-    def update(self, k, v, n=0):
-        # create a new meter if previously not recorded
-        self.meters[k].update(v, n)
-
-    def __str__(self):
-        """Concatenate the meters in one log line
-        """
-        s = ''
-        for i, (k, v) in enumerate(self.meters.iteritems()):
-            if i > 0:
-                s += '  '
-            s += k + ' ' + str(v)
-        return s
-
-    def tb_log(self, tb_logger, prefix='', step=None):
-        """Log using tensorboard
-        """
-        for k, v in self.meters.iteritems():
-            tb_logger.log_value(prefix + k, v.val, step=step)
   
 class TripletLoss(nn.Module):
     """
-    Triplet loss: exemples positifs = les 5 éléments avec id identique
-    exemples négatifs = les éléments d'id différent et parmi les 5 le plus similaires à l'anchor selon le modèle
+    Triplet loss: exemples positifs = les éléments avec id identique
+    exemples négatifs = l' éléments d'id différent le plus similaires à l'anchor selon le modèle dans le batch.
     """
 
     def __init__(self, margin=0):
@@ -108,8 +80,8 @@ class ReIdModel(nn.Module):
           self.cuda()
     def set_logger(self, logger):
         self.logger = logger
-    def get_cnn(self, arch, pretrained):
-        model = models.__dict__[arch]()
+    def get_cnn(self, arch):
+        model = models.__dict__[arch](pretrained=True)
         model.features = nn.DataParallel(model.features)
         return model
 

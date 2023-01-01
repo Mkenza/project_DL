@@ -29,17 +29,19 @@ class ReIdDataset(VisionDataset):
     def __getitem__(self, index):
         """This function returns a tuple that is further passed to collate_fn
         """
+        # get anchor
         image, id = self.get_raw_item(index)
 
         if self.transform is not None:
             image = self.transform(image)
         ids = [id]
 
-        # we add positive examples only to training batches
+        # we add 2 positive examples only to training batches
         if "test" in self.image_folder:
           images_p = image.unsqueeze(dim=0)
 
           indexes = [index]
+
         else:
           images = []
 
@@ -93,6 +95,8 @@ def collate_fn(data):
     # Merge mini-batches of images 
     images = torch.stack(images, 0) #dim = (batch_size, 3, 3, 128, 64)
     images_p = images.flatten(start_dim=0, end_dim=1) #dim = (batch_size * 3, 3, 128, 64)
+
+    # flatten tuple of lists to one tuple of ids (resp. indexes) of the batch
     ids_flatten = tuple(chain.from_iterable(ids))
     indexes_flattened = tuple(chain.from_iterable(indexes))
     return images_p, indexes_flattened , ids_flatten
