@@ -33,6 +33,8 @@ Le code à exécuter est disponible sur le notebook, mais peut aussi être exéc
 Une fonction recall permet le calcul du recall@1 souvent utilisé dans ce contexte de recherche. Il correspond aux de bonnes réponses classées en premier par le modèle. Ainsi, une bonne réponse dans ce contexte est une image d'une personne de même identité.
 
 On peut aussi visualiser les images les plus proches d'un élément selon le modèle, avec la fonction similar_images. 
+![Alt text](similarities.PNG?raw=true "Title")
+
 
 Ou encore visualiser l'espace encodé des images pour comprendre la représentation du modèle.
 
