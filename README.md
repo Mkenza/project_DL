@@ -36,7 +36,7 @@ python train.py --data_path Market_data/Market-1501-v15.09.15/
 
 **Step 5: Evaluation**
 
-Une fonction recall permet le calcul du recall@1 souvent utilisé dans ce contexte de recherche. Il correspond aux de bonnes réponses classées en premier par le modèle. Ainsi, une bonne réponse dans ce contexte est une image d'une personne de même identité.
+Une fonction recall permet le calcul du recall@1 souvent utilisé dans ce contexte de recherche. Il correspond au taux de bonnes réponses classées en premier par le modèle. Ainsi, une bonne réponse dans ce contexte est une image d'une personne de même identité (différente de l'originale).
 
 On peut aussi visualiser les images les plus proches d'un élément selon le modèle, avec la fonction similar_images. 
 ![Alt text](similarities.PNG?raw=true "Title")
