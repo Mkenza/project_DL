@@ -54,7 +54,7 @@ class ReIdModel(nn.Module):
         self.embed_size = opt.embed_size
 
         # Load a pre-trained model
-        self.cnn = self.get_cnn(opt.cnn_type, True)
+        self.cnn = self.get_cnn(opt.cnn_type)
 
         
         # Replace the last fully connected layer of CNN with a new one
