@@ -23,10 +23,16 @@ La classe TripletLoss permet de définir la fonction forward_loss de notre modè
 **Step 4: Entraînement**
 
 Nous allons entraîner le modèle avec les optios définis dans le dictionnaire options, montrer la loss sur l'entraînement, puis calculer le recall@1 sur la validation (le test). Les informations sur la loss, le nombre d'itérations sont disponible dans le logger.
+
+Le code à exécuter est disponible sur le notebook, mais peut aussi être exécuter dans un terminal (train.py avec les arguments dans option, exécuter train.py -h pour plus d'informations)
+exemples: 
 ```bash
 python train.py
 ```
-Le code à exécuter est disponible sur le notebook, mais peut aussi être exécuter dans un terminal (train.py avec les arguments dans option, exécuter train.py --h pour plus d'informations)
+ou 
+```bash
+python train.py --data_path Market_data/Market-1501-v15.09.15/
+```
 
 **Step 5: Evaluation**
 
