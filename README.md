@@ -2,9 +2,9 @@
  <h2> Kenza MAKHLOUF</h2></center>
 
 
-L'objectif est pouvoir identifier la personne sous plusieurs points de vue, avec le dataset MARKET 1501 [1].
+L'objectif est de pouvoir identifier la personne sous plusieurs points de vue, en entraînant un modèle sur le dataset MARKET 1501 [1].
 
-Pour cela, nous allons tenté de finetune un modèle pré-entraîné avec une triplet loss proposée dans l'article [2].
+Pour cela, nous allons tenter de finetune un modèle pré-entraîné avec une triplet loss proposée dans l'article [2].
 
 **Step 1: Pré-traitement du dataset:**
 * Les dossiers contiennent des fichiers et des images qu'on ne veut pas ajouter à l'entraînement, ceux-ci seront supprimés.
@@ -22,7 +22,7 @@ La classe TripletLoss permet de définir la fonction forward_loss de notre modè
 
 **Step 4: Entraînement**
 
-Nous allons entraîner le modèle avec les optios définis dans le dictionnaire options, montrer la loss sur l'entraînement, puis calculer le recall@1 sur la validation (le test). Les informations sur la loss, le nombre d'itérations sont disponible dans le logger.
+Nous allons entraîner le modèle avec les optios définis dans le dictionnaire options, montrer la loss sur l'entraînement, puis calculer le recall@1 sur la validation (le test). Les informations sur la loss, le nombre d'itérations sont disponibles dans le logger.
 
 Le code à exécuter est disponible sur le notebook, mais peut aussi être exécuter dans un terminal (train.py avec les arguments dans option, exécuter train.py -h pour plus d'informations)
 exemples: 
